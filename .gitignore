@@ -1,7 +1,13 @@
-﻿build/
+﻿# Pastas de build (não versionar)
+build/
 dist/
-*.exe
-*.lnk
-__pycache__/
+
+# Arquivos temporários do Python
 *.pyc
+__pycache__/
+
+# Windows
 Thumbs.db
+
+#Atalho
+*.lnk
