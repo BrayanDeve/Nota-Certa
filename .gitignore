@@ -1,0 +1,7 @@
+﻿build/
+dist/
+*.exe
+*.lnk
+__pycache__/
+*.pyc
+Thumbs.db
