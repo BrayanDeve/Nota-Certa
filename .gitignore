@@ -11,3 +11,6 @@ Thumbs.db
 
 #Atalho
 *.lnk
+
+# Dados gerados pelo app
+resultados_materias.csv

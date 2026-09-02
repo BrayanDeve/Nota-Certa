@@ -1,5 +1,5 @@
-import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox
+import ttkbootstrap as tb
 import csv
 from datetime import datetime
 
@@ -8,6 +8,30 @@ resultados = {}  # chave = matéria, valor = dict com acertos, erros, total, dat
 materia_atual = None
 arquivo_csv = "resultados_materias.csv"
 linhas_selecionadas = set()  # para simular checkbox único
+
+# --- Paleta de cores ---
+FONTE = "Segoe UI"
+
+COR_FUNDO = "#F8FAFC"
+COR_SUPERFICIE = "#FFFFFF"
+COR_TEXTO = "#1E293B"
+COR_TEXTO_SECUNDARIO = "#64748B"
+COR_BORDA = "#E2E8F0"
+
+COR_SUCESSO = "#2E7D32"
+COR_SUCESSO_HOVER = "#256428"
+COR_PERIGO = "#DC2626"
+COR_PERIGO_HOVER = "#B91C1C"
+COR_ALERTA = "#F59E0B"
+COR_ALERTA_HOVER = "#D97F06"
+COR_SECUNDARIO = "#475569"
+COR_SECUNDARIO_HOVER = "#334155"
+
+COR_LINHA_PAR = "#FFFFFF"
+COR_LINHA_IMPAR = "#F1F5F9"
+COR_LINHA_SELECIONADA_BG = "#DBEAFE"
+COR_CABECALHO_BG = "#EEF2F7"
+COR_CABECALHO_FG = "#334155"
 
 # Funções
 def atualizar_labels():
@@ -54,6 +78,12 @@ def registrar_erro():
 def zerar():
     global materia_atual
     if materia_atual:
+        confirmar = messagebox.askyesno(
+            "Confirmar",
+            f"Deseja realmente zerar os contadores de \"{materia_atual}\"?\n\nEssa ação não pode ser desfeita."
+        )
+        if not confirmar:
+            return
         resultados[materia_atual] = {"acertos":0, "erros":0, "total":0, "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         atualizar_labels()
         atualizar_tabela()
@@ -89,6 +119,16 @@ def excluir():
     selected = tree.selection()
     if not selected:
         messagebox.showwarning("Atenção", "Selecione uma matéria para excluir!")
+        return
+    materias = [tree.item(item, 'values')[1] for item in selected]
+    lista = ", ".join(f'"{m}"' for m in materias)
+    rotulo = "a matéria" if len(materias) == 1 else "as matérias"
+    confirmar = messagebox.askyesno(
+        "Confirmar exclusão",
+        f"Deseja realmente excluir {rotulo} {lista}?\n\n"
+        "Essa ação não pode ser desfeita e os dados serão perdidos caso ainda não tenham sido salvos em CSV."
+    )
+    if not confirmar:
         return
     for item in selected:
         mat = tree.item(item, 'values')[1]
@@ -137,47 +177,103 @@ def sair():
     root.destroy()
 
 # --- Janela principal ---
-root = tk.Tk()
+root = tb.Window(title="Contador de Acertos e Erros", themename="flatly", size=(900, 580), resizable=(False, False))
+root.configure(background=COR_FUNDO)
+
+style = root.style
+
+# Estilos base
+style.configure("TFrame", background=COR_FUNDO)
+style.configure("TLabel", background=COR_FUNDO, foreground=COR_TEXTO, font=(FONTE, 12))
+style.configure("TEntry", fieldbackground=COR_SUPERFICIE, foreground=COR_TEXTO, padding=6)
+
+# Estilos de métricas
+style.configure("Metric.Success.TLabel", background=COR_FUNDO, foreground=COR_SUCESSO, font=(FONTE, 14, "bold"))
+style.configure("Metric.Danger.TLabel", background=COR_FUNDO, foreground=COR_PERIGO, font=(FONTE, 14, "bold"))
+style.configure("Metric.TLabel", background=COR_FUNDO, foreground=COR_TEXTO, font=(FONTE, 14, "bold"))
+
+# Estilos de botões (ação principal, em negrito, cores com contraste WCAG AA)
+style.configure("Success.TButton", background=COR_SUCESSO, foreground="white", font=(FONTE, 11, "bold"), padding=8)
+style.map("Success.TButton", background=[("active", COR_SUCESSO_HOVER)])
+
+style.configure("Danger.TButton", background=COR_PERIGO, foreground="white", font=(FONTE, 11, "bold"), padding=8)
+style.map("Danger.TButton", background=[("active", COR_PERIGO_HOVER)])
+
+style.configure("Warning.TButton", background=COR_ALERTA, foreground=COR_TEXTO, font=(FONTE, 11, "bold"), padding=8)
+style.map("Warning.TButton", background=[("active", COR_ALERTA_HOVER)])
+
+# Estilos de botões secundários (ações neutras/menos frequentes)
+style.configure("Secondary.TButton", background=COR_SECUNDARIO, foreground="white", font=(FONTE, 11), padding=8)
+style.map("Secondary.TButton", background=[("active", COR_SECUNDARIO_HOVER)])
+
+style.configure("Outline.TButton", background=COR_FUNDO, foreground=COR_TEXTO_SECUNDARIO, font=(FONTE, 10), padding=6)
+
 root.title("Contador de Acertos e Erros")
-root.geometry("820x520")
-root.resizable(False, False)
+
+# Container geral com margem uniforme
+container = tb.Frame(root, padding=20)
+container.pack(fill="both", expand=True)
 
 # Top
-top_frame = tk.Frame(root, pady=10)
+top_frame = tb.Frame(container, padding=(0, 0, 0, 10))
 top_frame.pack(fill="x")
-tk.Label(top_frame, text="Qual é a matéria?", font=("Arial", 12)).pack(side="left", padx=5)
-material = tk.StringVar()
-tk.Entry(top_frame, textvariable=material, width=35, font=("Arial", 12)).pack(side="left", padx=5)
-tk.Button(top_frame, text="Próxima", width=10, font=("Arial", 11), command=proxima).pack(side="left", padx=5)
+tb.Label(top_frame, text="Qual é a matéria?", font=(FONTE, 12)).pack(side="left", padx=8)
+material = tb.StringVar()
+tb.Entry(top_frame, textvariable=material, width=35, font=(FONTE, 12)).pack(side="left", padx=8)
+tb.Button(top_frame, text="Próxima", width=10, style="Secondary.TButton", command=proxima).pack(side="left", padx=8)
 
 # Contadores
-count_frame = tk.Frame(root, pady=10)
+count_frame = tb.Frame(container, padding=(0, 0, 0, 10))
 count_frame.pack()
-tk.Button(count_frame, text="Acerto", width=12, font=("Arial", 11), bg="#4CAF50", fg="white", command=registrar_acerto).pack(side="left", padx=5)
-tk.Button(count_frame, text="Erro", width=12, font=("Arial", 11), bg="#F44336", fg="white", command=registrar_erro).pack(side="left", padx=5)
-tk.Button(count_frame, text="Zerar", width=12, font=("Arial", 11), bg="#FFC107", command=zerar).pack(side="left", padx=5)
+tb.Button(count_frame, text="Acerto", width=14, style="Success.TButton", command=registrar_acerto).pack(side="left", padx=8)
+tb.Button(count_frame, text="Erro", width=14, style="Danger.TButton", command=registrar_erro).pack(side="left", padx=8)
+tb.Button(count_frame, text="Zerar", width=14, style="Warning.TButton", command=zerar).pack(side="left", padx=8)
 
 # Labels
-lbl_frame = tk.Frame(root, pady=10)
+lbl_frame = tb.Frame(container, padding=(0, 0, 0, 10))
 lbl_frame.pack()
-lbl_acertos = tk.Label(lbl_frame, text="Acertos: 0", font=("Arial", 12))
-lbl_acertos.pack(side="left", padx=15)
-lbl_erros = tk.Label(lbl_frame, text="Erros: 0", font=("Arial", 12))
-lbl_erros.pack(side="left", padx=15)
-lbl_total = tk.Label(lbl_frame, text="Total: 0", font=("Arial", 12))
-lbl_total.pack(side="left", padx=15)
+lbl_acertos = tb.Label(lbl_frame, text="Acertos: 0", style="Metric.Success.TLabel")
+lbl_acertos.pack(side="left", padx=25)
+lbl_erros = tb.Label(lbl_frame, text="Erros: 0", style="Metric.Danger.TLabel")
+lbl_erros.pack(side="left", padx=25)
+lbl_total = tb.Label(lbl_frame, text="Total: 0", style="Metric.TLabel")
+lbl_total.pack(side="left", padx=25)
 
 # Ações
-action_frame = tk.Frame(root, pady=10)
+action_frame = tb.Frame(container, padding=(0, 0, 0, 10))
 action_frame.pack()
-tk.Button(action_frame, text="Excluir", width=12, font=("Arial", 11), command=excluir).pack(side="left", padx=5)
-tk.Button(action_frame, text="Salvar CSV", width=12, font=("Arial", 11), command=salvar).pack(side="left", padx=5)
-tk.Button(action_frame, text="Sair", width=12, font=("Arial", 11), bg="#9E9E9E", command=sair).pack(side="left", padx=30)
+tb.Button(action_frame, text="Excluir", width=12, style="Danger.TButton", command=excluir).pack(side="left", padx=5)
+tb.Button(action_frame, text="Salvar CSV", width=12, style="Secondary.TButton", command=salvar).pack(side="left", padx=5)
+tb.Button(action_frame, text="Sair", width=12, style="Outline.TButton", command=sair).pack(side="left", padx=30)
 
 # Tabela com checkbox
-tabela_frame = tk.Frame(root)
+tabela_frame = tb.Frame(container)
 tabela_frame.pack(pady=10, fill="both", expand=True)
-tree = ttk.Treeview(
+
+style.configure(
+    "Treeview",
+    background=COR_SUPERFICIE,
+    fieldbackground=COR_SUPERFICIE,
+    foreground=COR_TEXTO,
+    rowheight=28,
+    font=(FONTE, 10),
+    bordercolor=COR_BORDA,
+    borderwidth=1,
+)
+style.configure(
+    "Treeview.Heading",
+    background=COR_CABECALHO_BG,
+    foreground=COR_CABECALHO_FG,
+    font=(FONTE, 10, "bold"),
+    relief="flat",
+)
+style.map(
+    "Treeview",
+    background=[("selected", COR_LINHA_SELECIONADA_BG)],
+    foreground=[("selected", COR_TEXTO)],
+)
+
+tree = tb.Treeview(
     tabela_frame,
     columns=("sel","matéria", "acertos", "erros", "total", "pct", "data"),
     show="headings",
@@ -200,8 +296,8 @@ tree.column("data", width=180, anchor="center")
 tree.pack(fill="both", expand=True)
 
 # Configura cores alternadas das linhas
-tree.tag_configure('evenrow', background="#F0F0F0")
-tree.tag_configure('oddrow', background="#FFFFFF")
+tree.tag_configure('evenrow', background=COR_LINHA_PAR)
+tree.tag_configure('oddrow', background=COR_LINHA_IMPAR)
 
 tree.bind("<Button-1>", toggle_checkbox)
 tree.bind("<<TreeviewSelect>>", selecionar_materia)
